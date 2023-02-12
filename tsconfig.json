@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES5",
+    "lib": ["es2015", "es2016", "es2017", "dom"],
+    "types": ["jest", "node"],
+    "module": "commonjs",
+    "typeRoots": [
+      "./node_modules/@types"
+    ],
+    "resolveJsonModule": true,
+    "declaration": false,
+    "sourceMap": false,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "esModuleInterop": true
+  },
+  "include": [
+    "packages"
+  ],
+	"exclude": [
+    "node_modules"
+  ]
+}

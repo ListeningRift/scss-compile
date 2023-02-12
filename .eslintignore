@@ -1,0 +1,6 @@
+rollup.config.js
+tsconfig.json
+jest.config.js
+.eslintrc.js
+dist/**
+node_modules/**
