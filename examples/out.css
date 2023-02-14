@@ -2,14 +2,6 @@
   color: red;
 }
 
-#app .box1 {
-  color: red;
-}
-
-#app .box1:hover {
-  color: red;
-}
-
-#app .box2 {
-  color: red;
+#app .box {
+  color: blue;
 }

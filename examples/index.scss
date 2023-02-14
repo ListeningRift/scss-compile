@@ -1,15 +1,11 @@
+$color: red;
+
 #app {
-  color: red;
+  color: $color;
 
-  .box1 {
-    color: red;
+  $color: blue;
 
-    &:hover {
-      color: red;
-    }
-  }
-
-  .box2 {
-    color: red;
+  .box {
+    color: $color;
   }
 }

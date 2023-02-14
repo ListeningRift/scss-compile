@@ -3,32 +3,37 @@ import os from 'os'
 
 export function getStyleMap(
   ast: AST,
-  scope: string[] = [],
+  level: string[] = [],
+  scope: any = {},
   rulesOrder: string[] = [],
   styleMap: Record<string, Record<string, string>> = {}
 ): [string[], Record<string, Record<string, string>>] {
   for (let i = 0; i < ast.body!.length; i++) {
     const current = ast.body![i]
 
-    if (current.type === ASTType.CSSStyleRule) {
+    if (current.type === ASTType.rule) {
       if (current.originText.includes('&')) {
-        const tempScope = [current.originText.replace(/\&/g, scope.join(' '))]
-        rulesOrder.push(tempScope[0])
-        styleMap[tempScope[0]] = {}
+        const tempLevel = [current.originText.replace(/\&/g, level.join(' '))]
+        rulesOrder.push(tempLevel[0])
+        styleMap[tempLevel[0]] = {}
 
-        ;[rulesOrder, styleMap] = getStyleMap(current, tempScope, rulesOrder, styleMap)
+        ;[rulesOrder, styleMap] = getStyleMap(current, tempLevel, JSON.parse(JSON.stringify(scope)), rulesOrder, styleMap)
       } else {
-        scope.push(current.originText)
-        rulesOrder.push(scope.join(' '))
-        styleMap[scope.join(' ')] = {}
+        level.push(current.originText)
+        rulesOrder.push(level.join(' '))
+        styleMap[level.join(' ')] = {}
 
-        ;[rulesOrder, styleMap] = getStyleMap(current, scope, rulesOrder, styleMap)
-        scope.pop()
+        ;[rulesOrder, styleMap] = getStyleMap(current, level, JSON.parse(JSON.stringify(scope)), rulesOrder, styleMap)
+        level.pop()
       }
-    }
-
-    if (current.type === ASTType.CSSStyleDeclaration) {
-      styleMap[scope.join(' ')][current.prop!] = current.value!
+    } else if (current.type === ASTType.styleDeclaration) {
+      if (current.value!.startsWith('$')) {
+        styleMap[level.join(' ')][current.prop!] = scope[current.value!]
+      } else {
+        styleMap[level.join(' ')][current.prop!] = current.value!
+      }
+    } else if (current.type === ASTType.variableDeclaration) {
+      scope[current.prop!] = current.value!
     }
   }
 

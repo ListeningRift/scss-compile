@@ -49,9 +49,10 @@ export function tokenize(input: string): string[] {
 }
 
 export const enum ASTType {
-  StyleSheet = 'StyleSheet',
-  CSSStyleRule = 'CSSStyleRule',
-  CSSStyleDeclaration = 'CSSStyleDeclaration'
+  styleSheet = 'StyleSheet',
+  rule = 'StyleRule',
+  styleDeclaration = 'StyleDeclaration',
+  variableDeclaration = 'VariableDeclaration'
 }
 
 export interface AST {
@@ -64,7 +65,7 @@ export interface AST {
 
 export function transformAST(tokenList: string[]): AST {
   let ast: AST = {
-    type: ASTType.StyleSheet,
+    type: ASTType.styleSheet,
     originText: '',
     body: []
   }
@@ -79,7 +80,7 @@ export function transformAST(tokenList: string[]): AST {
       currentScope += currentToken
       const currentObj = getProperty(ast, currentLevel)
       currentObj.push({
-        type: ASTType.CSSStyleRule,
+        type: ASTType.rule,
         originText: currentScope,
         body: []
       })
@@ -89,8 +90,14 @@ export function transformAST(tokenList: string[]): AST {
       currentLevel.pop()
       currentScope = ''
     } else if (nextToken === ':' && tokenList[i + 3] === ';') {
+      let type: ASTType
+      if (currentToken.startsWith('$')) {
+        type = ASTType.variableDeclaration
+      } else {
+        type = ASTType.styleDeclaration
+      }
       getProperty(ast, currentLevel).push({
-        type: ASTType.CSSStyleDeclaration,
+        type: type,
         originText: currentToken + ':' + tokenList[i + 2],
         prop: currentToken,
         value: tokenList[i + 2]

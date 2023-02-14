@@ -13,8 +13,8 @@ commander
   .parse(process.argv)
 
 const {
-  input,
-  output,
+  input = './examples/index.scss',
+  output = './examples/out.css',
   minify = false
 }= commander.opts()
 
