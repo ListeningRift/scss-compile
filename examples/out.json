@@ -1,6 +1,5 @@
 #app {
   color: red;
-  background: yellow;
 }
 
 #app .box {

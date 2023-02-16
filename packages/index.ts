@@ -14,13 +14,16 @@ commander
 
 const {
   input = './examples/index.scss',
-  output = './examples/out.css',
-  minify = false
+  output = './examples/out.json',
+  minify = true
 }= commander.opts()
 
 
 fs.readFile(path.resolve(process.cwd(), commander.args[0] || input), 'utf8', function(err, data) {
   const ast = parse(data)
+  // fs.writeFile(path.resolve(process.cwd(), commander.args[1] || output), JSON.stringify(ast, null, 2), () => {
+  //   console.log('Finished!')
+  // })
   fs.writeFile(path.resolve(process.cwd(), commander.args[1] || output), generate(ast, minify), () => {
     console.log('Finished!')
   })

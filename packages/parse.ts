@@ -1,7 +1,8 @@
 import { trim, getProperty } from './utils'
 
-const symbols = ['{', '}', ':', ';', ' ', '>', '+']
-const selectorSymbols = [' ', '>', '+', '::', ':']
+const SYMBOLS = ['{', '}', ':', ';', ' ', '>', '+']
+const SELECTORSYMBOLS = [' ', '>', '+', '::', ':']
+const KEYWORDS = ['@mixin', '@include']
 
 export function tokenize(input: string): string[] {
   let tokenList: string[] = []
@@ -14,18 +15,20 @@ export function tokenize(input: string): string[] {
     let i = 0
 
     while (i < line.length) {
-      if (symbols.includes(line[i])) {
+      if (SYMBOLS.includes(line[i])) {
+        const lastToken = tokenList[tokenList.length - 1]
+
         if (line[i] === ':' && line[i + 1] === ':') {
           currentToken += line[i] + line[i + 1]
           i++
-        } else if (line[i] === ' ' && symbols.includes(line[i - 1])) {
+        } else if (line[i] === ' ' && (SYMBOLS.includes(lastToken) || KEYWORDS.includes(lastToken))) {
           currentToken = ''
         } else {
           currentToken += line[i]
         }
 
         if (currentToken) {
-          if (tokenList[tokenList.length - 1] === ' ') {
+          if (lastToken === ' ') {
             tokenList[tokenList.length - 1] = currentToken
           } else {
             tokenList.push(currentToken)
@@ -35,7 +38,7 @@ export function tokenize(input: string): string[] {
       } else {
         currentToken += line[i]
 
-        if (symbols.includes(line[i + 1])) {
+        if (SYMBOLS.includes(line[i + 1])) {
           tokenList.push(currentToken)
           currentToken = ''
         }
@@ -52,7 +55,9 @@ export const enum ASTType {
   styleSheet = 'StyleSheet',
   rule = 'StyleRule',
   styleDeclaration = 'StyleDeclaration',
-  variableDeclaration = 'VariableDeclaration'
+  variableDeclaration = 'VariableDeclaration',
+  mixinDeclaration = 'MixinDeclaration',
+  includeDeclaration = 'IncludeDeclaration'
 }
 
 export interface AST {
@@ -70,25 +75,41 @@ export function transformAST(tokenList: string[]): AST {
     body: []
   }
   let i = 0
-  let currentScope = ''
-  let currentLevel: number[] = []
+  let currentLevel = ''
+  let currentPath: number[] = []
 
   while (i < tokenList.length) {
     const currentToken = tokenList[i]
     const nextToken = tokenList[i + 1]
-    if (nextToken === '{') {
-      currentScope += currentToken
-      const currentObj = getProperty(ast, currentLevel)
+
+    if (currentToken === '@mixin' && tokenList[i + 2] === '{') {
+      const currentObj = getProperty(ast, currentPath)
       currentObj.push({
-        type: ASTType.rule,
-        originText: currentScope,
+        type: ASTType.mixinDeclaration,
+        originText: nextToken,
         body: []
       })
-      currentLevel.push(currentObj.length - 1)
-      currentScope = ''
+      currentPath.push(currentObj.length - 1)
+      i++
+    } else if (currentToken === '@include' && tokenList[i + 2] === ';') {
+      getProperty(ast, currentPath).push({
+        type: ASTType.includeDeclaration,
+        originText: nextToken
+      })
+      i += 2
+    } else if (nextToken === '{') {
+      currentLevel += currentToken
+      const currentObj = getProperty(ast, currentPath)
+      currentObj.push({
+        type: ASTType.rule,
+        originText: currentLevel,
+        body: []
+      })
+      currentPath.push(currentObj.length - 1)
+      currentLevel = ''
     } else if (nextToken === '}') {
-      currentLevel.pop()
-      currentScope = ''
+      currentPath.pop()
+      currentLevel = ''
     } else if (nextToken === ':' && tokenList[i + 3] === ';') {
       let type: ASTType
       if (currentToken.startsWith('$')) {
@@ -96,16 +117,16 @@ export function transformAST(tokenList: string[]): AST {
       } else {
         type = ASTType.styleDeclaration
       }
-      getProperty(ast, currentLevel).push({
+      getProperty(ast, currentPath).push({
         type: type,
         originText: currentToken + ':' + tokenList[i + 2],
         prop: currentToken,
         value: tokenList[i + 2]
       })
       i += 2
-      currentScope = ''
-    } else if (selectorSymbols.includes(currentToken) || !symbols.includes(currentToken)) {
-      currentScope += currentToken
+      currentLevel = ''
+    } else if (SELECTORSYMBOLS.includes(currentToken) || !SYMBOLS.includes(currentToken)) {
+      currentLevel += currentToken
     }
     i++
   }

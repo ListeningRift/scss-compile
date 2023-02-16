@@ -1,10 +1,18 @@
 import { AST, ASTType } from './parse'
 import os from 'os'
 
+interface Scope {
+  variable: Record<string, string>,
+  mixin: Record<string, AST[]>
+}
+
 export function getStyleMap(
   ast: AST,
   level: string[] = [],
-  scope: any = {},
+  scope: Scope = {
+    variable: {},
+    mixin: {}
+  },
   rulesOrder: string[] = [],
   styleMap: Record<string, Record<string, string>> = {}
 ): [string[], Record<string, Record<string, string>>] {
@@ -28,12 +36,16 @@ export function getStyleMap(
       }
     } else if (current.type === ASTType.styleDeclaration) {
       if (current.value!.startsWith('$')) {
-        styleMap[level.join(' ')][current.prop!] = scope[current.value!]
+        styleMap[level.join(' ')][current.prop!] = scope.variable[current.value!]
       } else {
         styleMap[level.join(' ')][current.prop!] = current.value!
       }
     } else if (current.type === ASTType.variableDeclaration) {
-      scope[current.prop!] = current.value!
+      scope.variable[current.prop!] = current.value!
+    } else if (current.type === ASTType.mixinDeclaration) {
+      scope.mixin[current.originText] = current.body!
+    } else if (current.type === ASTType.includeDeclaration) {
+      ast.body = ast.body!.concat(scope.mixin[current.originText])
     }
   }
 
