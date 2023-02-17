@@ -192,48 +192,78 @@ describe('parse tests', () => {
     },
     {
       CSSText: `
-        @mixin backgroundMixin {
-          background: yellow;
+        @mixin backgroundMixin ($color, $width) {
+          background: $color;
+          width: $width;
         }
 
         #app {
-          @include backgroundMixin;
+          @include backgroundMixin (red, 12px);
 
-          @mixin backgroundMixin {
-            background: blue;
+          @mixin backgroundMixin ($color, $width) {
+            border-color: $color;
+            min-width: $width;
           }
 
           .box {
-            @include backgroundMixin;
+            @include backgroundMixin (yellow, 14px);
           }
         }
       `,
       tokenList: [
         '@mixin',
         'backgroundMixin',
+        '(',
+        '$color',
+        ',',
+        '$width',
+        ')',
         '{',
         'background',
         ':',
-        'yellow',
+        '$color',
+        ';',
+        'width',
+        ':',
+        '$width',
         ';',
         '}',
         '#app',
         '{',
         '@include',
         'backgroundMixin',
+        '(',
+        'red',
+        ',',
+        '12px',
+        ')',
         ';',
         '@mixin',
         'backgroundMixin',
+        '(',
+        '$color',
+        ',',
+        '$width',
+        ')',
         '{',
-        'background',
+        'border-color',
         ':',
-        'blue',
+        '$color',
+        ';',
+        'min-width',
+        ':',
+        '$width',
         ';',
         '}',
         '.box',
         '{',
         '@include',
         'backgroundMixin',
+        '(',
+        'yellow',
+        ',',
+        '14px',
+        ')',
         ';',
         '}',
         '}'
@@ -245,12 +275,19 @@ describe('parse tests', () => {
           {
             type: ASTType.mixinDeclaration,
             originText: 'backgroundMixin',
+            params: ['$color', '$width'],
             body: [
               {
                 type: ASTType.styleDeclaration,
-                originText: 'background:yellow',
+                originText: 'background:$color',
                 prop: 'background',
-                value: 'yellow'
+                value: '$color'
+              },
+              {
+                type: ASTType.styleDeclaration,
+                originText: 'width:$width',
+                prop: 'width',
+                value: '$width'
               }
             ]
           },
@@ -260,17 +297,25 @@ describe('parse tests', () => {
             body: [
               {
                 type: ASTType.includeDeclaration,
-                originText: 'backgroundMixin'
+                originText: 'backgroundMixin',
+                params: ['red', '12px']
               },
               {
                 type: ASTType.mixinDeclaration,
                 originText: 'backgroundMixin',
+                params: ['$color', '$width'],
                 body: [
                   {
                     type: ASTType.styleDeclaration,
-                    originText: 'background:blue',
-                    prop: 'background',
-                    value: 'blue'
+                    originText: 'border-color:$color',
+                    prop: 'border-color',
+                    value: '$color'
+                  },
+                  {
+                    type: ASTType.styleDeclaration,
+                    originText: 'min-width:$width',
+                    prop: 'min-width',
+                    value: '$width'
                   }
                 ]
               },
@@ -280,7 +325,8 @@ describe('parse tests', () => {
                 body: [
                   {
                     type: ASTType.includeDeclaration,
-                    originText: 'backgroundMixin'
+                    originText: 'backgroundMixin',
+                    params: ['yellow', '14px']
                   }
                 ]
               }

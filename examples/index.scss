@@ -1,14 +1,15 @@
 $color: red;
 
-@mixin colorMixin {
-  background: yellow;
+@mixin colorMixin ($color, $width) {
+  background: $color;
+  width: $width;
 }
 
 #app {
   color: $color;
 
   $color: blue;
-  @include colorMixin;
+  @include colorMixin (yellow, 12px);
 
   .box {
     color: $color;

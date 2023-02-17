@@ -4,7 +4,7 @@ import { ASTType } from '../packages/parse'
 describe('generate tests', () => {
   const cases = [
     {
-      CSSText: '#app{color:red;}#app .box1{color:red;}#app .box1:hover{color:red;}#app .box2::after{color:red;}',
+      CSSText: '#app {\r\n  color: red;\r\n}\r\n\r\n#app .box1 {\r\n  color: red;\r\n}\r\n\r\n#app .box1:hover {\r\n  color: red;\r\n}\r\n\r\n#app .box2::after {\r\n  color: red;\r\n}\r\n',
       rulesOrder: ['#app', '#app .box1', '#app .box1:hover', '#app .box2::after'],
       styleMap: {
         '#app': {
@@ -76,7 +76,7 @@ describe('generate tests', () => {
       }
     },
     {
-      CSSText: '#app {\r\n  color: red;\r\n}\r\n\r\n#app .box {\r\n  color: blue;\r\n}\r\n',
+      CSSText: '#app{color:red;}#app .box{color:blue;}',
       rulesOrder: ['#app', '#app .box'],
       styleMap: {
         '#app': {
@@ -130,14 +130,16 @@ describe('generate tests', () => {
       }
     },
     {
-      CSSText: '#app {\r\n  background: yellow;\r\n}\r\n\r\n#app .box {\r\n  background: blue;\r\n}\r\n',
+      CSSText: '#app{background:red;width:12px;}#app .box{border-color:yellow;min-width:14px;}',
       rulesOrder: ['#app', '#app .box'],
       styleMap: {
         '#app': {
-          background: 'yellow'
+          background: 'red',
+          width: '12px'
         },
         '#app .box': {
-          background: 'blue'
+          'border-color': 'yellow',
+          'min-width': '14px'
         }
       },
       AST: {
@@ -147,12 +149,19 @@ describe('generate tests', () => {
           {
             type: ASTType.mixinDeclaration,
             originText: 'backgroundMixin',
+            params: ['$color', '$width'],
             body: [
               {
                 type: ASTType.styleDeclaration,
-                originText: 'background:yellow',
+                originText: 'background:$color',
                 prop: 'background',
-                value: 'yellow'
+                value: '$color'
+              },
+              {
+                type: ASTType.styleDeclaration,
+                originText: 'width:$width',
+                prop: 'width',
+                value: '$width'
               }
             ]
           },
@@ -162,17 +171,25 @@ describe('generate tests', () => {
             body: [
               {
                 type: ASTType.includeDeclaration,
-                originText: 'backgroundMixin'
+                originText: 'backgroundMixin',
+                params: ['red', '12px']
               },
               {
                 type: ASTType.mixinDeclaration,
                 originText: 'backgroundMixin',
+                params: ['$color', '$width'],
                 body: [
                   {
                     type: ASTType.styleDeclaration,
-                    originText: 'background:blue',
-                    prop: 'background',
-                    value: 'blue'
+                    originText: 'border-color:$color',
+                    prop: 'border-color',
+                    value: '$color'
+                  },
+                  {
+                    type: ASTType.styleDeclaration,
+                    originText: 'min-width:$width',
+                    prop: 'min-width',
+                    value: '$width'
                   }
                 ]
               },
@@ -182,7 +199,8 @@ describe('generate tests', () => {
                 body: [
                   {
                     type: ASTType.includeDeclaration,
-                    originText: 'backgroundMixin'
+                    originText: 'backgroundMixin',
+                    params: ['yellow', '14px']
                   }
                 ]
               }
@@ -202,10 +220,10 @@ describe('generate tests', () => {
   })
 
   test('generate:generate tests', () => {
-    expect(generate(cases[0].AST, true)).toBe(cases[0].CSSText)
+    expect(generate(cases[0].AST)).toBe(cases[0].CSSText)
 
-    expect(generate(cases[1].AST)).toBe(cases[1].CSSText)
+    expect(generate(cases[1].AST, true)).toBe(cases[1].CSSText)
 
-    expect(generate(cases[2].AST)).toBe(cases[2].CSSText)
+    expect(generate(cases[2].AST, true)).toBe(cases[2].CSSText)
   })
 })

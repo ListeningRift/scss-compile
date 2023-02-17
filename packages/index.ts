@@ -15,7 +15,7 @@ commander
 const {
   input = './examples/index.scss',
   output = './examples/out.json',
-  minify = true
+  minify = false
 }= commander.opts()
 
 

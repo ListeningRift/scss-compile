@@ -3,7 +3,7 @@ import os from 'os'
 
 interface Scope {
   variable: Record<string, string>,
-  mixin: Record<string, AST[]>
+  mixin: Record<string, AST>
 }
 
 export function getStyleMap(
@@ -43,9 +43,15 @@ export function getStyleMap(
     } else if (current.type === ASTType.variableDeclaration) {
       scope.variable[current.prop!] = current.value!
     } else if (current.type === ASTType.mixinDeclaration) {
-      scope.mixin[current.originText] = current.body!
+      scope.mixin[current.originText] = current
     } else if (current.type === ASTType.includeDeclaration) {
-      ast.body = ast.body!.concat(scope.mixin[current.originText])
+      const tempScope = JSON.parse(JSON.stringify(scope))
+
+      scope.mixin[current.originText].params!.forEach((param, index) => {
+        tempScope.variable[param] = current.params![index]
+      })
+
+      ;[rulesOrder, styleMap] = getStyleMap(scope.mixin[current.originText], level, tempScope, rulesOrder, styleMap)
     }
   }
 

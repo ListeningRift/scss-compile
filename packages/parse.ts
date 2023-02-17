@@ -1,6 +1,6 @@
 import { trim, getProperty } from './utils'
 
-const SYMBOLS = ['{', '}', ':', ';', ' ', '>', '+']
+const SYMBOLS = ['{', '}', ':', ';', ' ', '>', '+', '(', ')', ',']
 const SELECTORSYMBOLS = [' ', '>', '+', '::', ':']
 const KEYWORDS = ['@mixin', '@include']
 
@@ -8,7 +8,7 @@ export function tokenize(input: string): string[] {
   let tokenList: string[] = []
   let n = 0
   let currentToken = ''
-  const lines = input.split(/[(\r\n)\r\n]+/)
+  const lines = input.split(/\r?\n/)
 
   while (n < lines.length) {
     const line = trim(lines[n]) // 直接略过缩进和行尾无意义的空格，性能优化
@@ -65,7 +65,8 @@ export interface AST {
   originText: string
   body?: AST[],
   prop?: string,
-  value?: string
+  value?: string,
+  params?: string[]
 }
 
 export function transformAST(tokenList: string[]): AST {
@@ -82,21 +83,39 @@ export function transformAST(tokenList: string[]): AST {
     const currentToken = tokenList[i]
     const nextToken = tokenList[i + 1]
 
-    if (currentToken === '@mixin' && tokenList[i + 2] === '{') {
+    if (currentToken === '@mixin') {
+      const params: string[] = []
+      if (tokenList[i + 2] === '(') {
+        i += 3
+        for (; i < tokenList.length; i++) {
+          if (!SYMBOLS.includes(tokenList[i]) && tokenList[i].startsWith('$')) params.push(tokenList[i])
+          if (tokenList[i + 1] === ')') break
+        }
+      }
       const currentObj = getProperty(ast, currentPath)
       currentObj.push({
         type: ASTType.mixinDeclaration,
         originText: nextToken,
+        params,
         body: []
       })
       currentPath.push(currentObj.length - 1)
       i++
-    } else if (currentToken === '@include' && tokenList[i + 2] === ';') {
+    } else if (currentToken === '@include') {
+      const params: string[] = []
+      if (tokenList[i + 2] === '(') {
+        i += 3
+        for (; i < tokenList.length; i++) {
+          if (!SYMBOLS.includes(tokenList[i])) params.push(tokenList[i])
+          if (tokenList[i + 1] === ')') break
+        }
+      }
       getProperty(ast, currentPath).push({
         type: ASTType.includeDeclaration,
+        params,
         originText: nextToken
       })
-      i += 2
+      i++
     } else if (nextToken === '{') {
       currentLevel += currentToken
       const currentObj = getProperty(ast, currentPath)
