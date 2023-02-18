@@ -130,16 +130,14 @@ describe('generate tests', () => {
       }
     },
     {
-      CSSText: '#app{background:red;width:12px;}#app .box{border-color:yellow;min-width:14px;}',
-      rulesOrder: ['#app', '#app .box'],
+      CSSText: '#app{color:yellow;background-color:yellow;width:14px;font-size:14px;}',
+      rulesOrder: ['#app'],
       styleMap: {
         '#app': {
-          background: 'red',
-          width: '12px'
-        },
-        '#app .box': {
-          'border-color': 'yellow',
-          'min-width': '14px'
+          color: 'yellow',
+          'background-color': 'yellow',
+          width: '14px',
+          'font-size': '14px'
         }
       },
       AST: {
@@ -148,20 +146,35 @@ describe('generate tests', () => {
         body: [
           {
             type: ASTType.mixinDeclaration,
-            originText: 'backgroundMixin',
-            params: ['$color', '$width'],
+            originText: 'widthMixin',
+            params: ['$width'],
             body: [
-              {
-                type: ASTType.styleDeclaration,
-                originText: 'background:$color',
-                prop: 'background',
-                value: '$color'
-              },
               {
                 type: ASTType.styleDeclaration,
                 originText: 'width:$width',
                 prop: 'width',
                 value: '$width'
+              },
+              {
+                type: ASTType.contentDeclaration,
+                originText: '@content'
+              }
+            ]
+          },
+          {
+            type: ASTType.mixinDeclaration,
+            originText: 'colorMixin',
+            params: ['$color'],
+            body: [
+              {
+                type: ASTType.styleDeclaration,
+                originText: 'color:$color',
+                prop: 'color',
+                value: '$color'
+              },
+              {
+                type: ASTType.contentDeclaration,
+                originText: '@content'
               }
             ]
           },
@@ -171,36 +184,27 @@ describe('generate tests', () => {
             body: [
               {
                 type: ASTType.includeDeclaration,
-                originText: 'backgroundMixin',
-                params: ['red', '12px']
-              },
-              {
-                type: ASTType.mixinDeclaration,
-                originText: 'backgroundMixin',
-                params: ['$color', '$width'],
+                originText: 'colorMixin',
+                params: ['yellow'],
                 body: [
                   {
                     type: ASTType.styleDeclaration,
-                    originText: 'border-color:$color',
-                    prop: 'border-color',
-                    value: '$color'
+                    originText: 'background-color:yellow',
+                    prop: 'background-color',
+                    value: 'yellow'
                   },
                   {
-                    type: ASTType.styleDeclaration,
-                    originText: 'min-width:$width',
-                    prop: 'min-width',
-                    value: '$width'
-                  }
-                ]
-              },
-              {
-                type: ASTType.rule,
-                originText: '.box',
-                body: [
-                  {
                     type: ASTType.includeDeclaration,
-                    originText: 'backgroundMixin',
-                    params: ['yellow', '14px']
+                    originText: 'widthMixin',
+                    params: ['14px'],
+                    body: [
+                      {
+                        type: ASTType.styleDeclaration,
+                        originText: 'font-size:14px',
+                        prop: 'font-size',
+                        value: '14px'
+                      }
+                    ]
                   }
                 ]
               }

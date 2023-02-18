@@ -3,7 +3,8 @@ import os from 'os'
 
 interface Scope {
   variable: Record<string, string>,
-  mixin: Record<string, AST>
+  mixin: Record<string, AST>,
+  content: Record<string, AST>
 }
 
 export function getStyleMap(
@@ -11,7 +12,8 @@ export function getStyleMap(
   level: string[] = [],
   scope: Scope = {
     variable: {},
-    mixin: {}
+    mixin: {},
+    content: {}
   },
   rulesOrder: string[] = [],
   styleMap: Record<string, Record<string, string>> = {}
@@ -51,7 +53,11 @@ export function getStyleMap(
         tempScope.variable[param] = current.params![index]
       })
 
+      tempScope.content[current.originText] = current
+
       ;[rulesOrder, styleMap] = getStyleMap(scope.mixin[current.originText], level, tempScope, rulesOrder, styleMap)
+    } else if (current.type === ASTType.contentDeclaration) {
+      [rulesOrder, styleMap] = getStyleMap(scope.content[ast.originText], level, JSON.parse(JSON.stringify(scope)), rulesOrder, styleMap)
     }
   }
 

@@ -2,7 +2,7 @@ import { trim, getProperty } from './utils'
 
 const SYMBOLS = ['{', '}', ':', ';', ' ', '>', '+', '(', ')', ',']
 const SELECTORSYMBOLS = [' ', '>', '+', '::', ':']
-const KEYWORDS = ['@mixin', '@include']
+const KEYWORDS = ['@mixin', '@include', '@content']
 
 export function tokenize(input: string): string[] {
   let tokenList: string[] = []
@@ -57,7 +57,8 @@ export const enum ASTType {
   styleDeclaration = 'StyleDeclaration',
   variableDeclaration = 'VariableDeclaration',
   mixinDeclaration = 'MixinDeclaration',
-  includeDeclaration = 'IncludeDeclaration'
+  includeDeclaration = 'IncludeDeclaration',
+  contentDeclaration = 'ContentDeclaration'
 }
 
 export interface AST {
@@ -110,12 +111,22 @@ export function transformAST(tokenList: string[]): AST {
           if (tokenList[i + 1] === ')') break
         }
       }
-      getProperty(ast, currentPath).push({
+      const currentObj = getProperty(ast, currentPath)
+      currentObj.push({
         type: ASTType.includeDeclaration,
         params,
-        originText: nextToken
+        originText: nextToken,
+        body: []
       })
-      i++
+      if (tokenList[i + 2] === '{') {
+        currentPath.push(currentObj.length - 1)
+      }
+      i += 2
+    } else if (currentToken === '@content') {
+      getProperty(ast, currentPath).push({
+        type: ASTType.contentDeclaration,
+        originText: '@content'
+      })
     } else if (nextToken === '{') {
       currentLevel += currentToken
       const currentObj = getProperty(ast, currentPath)
