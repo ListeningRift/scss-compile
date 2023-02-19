@@ -1,7 +1,7 @@
 import { trim, getProperty } from './utils'
 
 const SYMBOLS = ['{', '}', ':', ';', ' ', '>', '+', '(', ')', ',']
-const SELECTORSYMBOLS = [' ', '>', '+', '::', ':']
+const SELECTORSYMBOLS = [' ', '>', '+', '::', ':', ',']
 const KEYWORDS = ['@mixin', '@include', '@content']
 
 export function tokenize(input: string): string[] {

@@ -1,6 +1,7 @@
-#app {
-  color: yellow;
-  background-color: yellow;
-  width: 14px;
-  font-size: 14px;
+#app .box1 {
+  color: red;
+}
+
+#app .box2 {
+  color: red;
 }

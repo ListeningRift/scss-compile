@@ -1,5 +1,6 @@
 import { AST, ASTType } from './parse'
 import os from 'os'
+import { getPaths } from './utils'
 
 interface Scope {
   variable: Record<string, string>,
@@ -16,31 +17,30 @@ export function getStyleMap(
     content: {}
   },
   rulesOrder: string[] = [],
-  styleMap: Record<string, Record<string, string>> = {}
+  styleMap: Record<string, Record<string, string>> = {},
+  minify = false
 ): [string[], Record<string, Record<string, string>>] {
   for (let i = 0; i < ast.body!.length; i++) {
     const current = ast.body![i]
 
     if (current.type === ASTType.rule) {
-      if (current.originText.includes('&')) {
-        const tempLevel = [current.originText.replace(/\&/g, level.join(' '))]
-        rulesOrder.push(tempLevel[0])
-        styleMap[tempLevel[0]] = {}
-
-        ;[rulesOrder, styleMap] = getStyleMap(current, tempLevel, JSON.parse(JSON.stringify(scope)), rulesOrder, styleMap)
-      } else {
-        level.push(current.originText)
-        rulesOrder.push(level.join(' '))
-        styleMap[level.join(' ')] = {}
-
-        ;[rulesOrder, styleMap] = getStyleMap(current, level, JSON.parse(JSON.stringify(scope)), rulesOrder, styleMap)
-        level.pop()
-      }
+      level.push(current.originText)
+      ;[rulesOrder, styleMap] = getStyleMap(current, level, JSON.parse(JSON.stringify(scope)), rulesOrder, styleMap, minify)
+      level.pop()
     } else if (current.type === ASTType.styleDeclaration) {
+      let value: string
       if (current.value!.startsWith('$')) {
-        styleMap[level.join(' ')][current.prop!] = scope.variable[current.value!]
+        value = scope.variable[current.value!]
       } else {
-        styleMap[level.join(' ')][current.prop!] = current.value!
+        value = current.value!
+      }
+
+      const path = getPaths(level).join(',' + (minify ? '' : ' '))
+      if (styleMap[path]) {
+        styleMap[path][current.prop!] = value
+      } else {
+        styleMap[path] = { [current.prop!]: value }
+        rulesOrder.push(path)
       }
     } else if (current.type === ASTType.variableDeclaration) {
       scope.variable[current.prop!] = current.value!
@@ -55,9 +55,9 @@ export function getStyleMap(
 
       tempScope.content[current.originText] = current
 
-      ;[rulesOrder, styleMap] = getStyleMap(scope.mixin[current.originText], level, tempScope, rulesOrder, styleMap)
+      ;[rulesOrder, styleMap] = getStyleMap(scope.mixin[current.originText], level, tempScope, rulesOrder, styleMap, minify)
     } else if (current.type === ASTType.contentDeclaration) {
-      [rulesOrder, styleMap] = getStyleMap(scope.content[ast.originText], level, JSON.parse(JSON.stringify(scope)), rulesOrder, styleMap)
+      [rulesOrder, styleMap] = getStyleMap(scope.content[ast.originText], level, JSON.parse(JSON.stringify(scope)), rulesOrder, styleMap, minify)
     }
   }
 
@@ -74,7 +74,7 @@ export default function generate(ast: AST, minify = false): string {
       spacer: ' ',
       EOL: os.EOL
     }
-  const [rulesOrder, styleMap] = getStyleMap(ast)
+  const [rulesOrder, styleMap] = getStyleMap(ast, undefined, undefined, undefined, undefined, minify)
 
   let res = ''
 

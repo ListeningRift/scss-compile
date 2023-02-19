@@ -1,18 +1,5 @@
-@mixin widthMixin ($width) {
-  width: $width;
-  @content;
-}
-
-@mixin colorMixin ($color) {
-  color: $color;
-  @content;
-}
-
 #app {
-  @include colorMixin (yellow) {
-    background-color: yellow;
-    @include widthMixin (14px) {
-      font-size: 14px;
-    }
+  .box1, .box2 {
+    color: red;
   }
 }
